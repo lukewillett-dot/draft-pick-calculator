@@ -638,7 +638,7 @@ function addPick(side) {
         const label = 'Rd ' + r;
         const tradeValue = rv.tradeValue;
 
-        const list = document.getElementById('picks' + side);
+        const list = document.getElementById('side' + side);
         const li = document.createElement('li');
         li.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #E2E8F0';
         li.innerHTML = '<span>' + label + '</span><span style="display:flex;align-items:center;gap:8px"><span style="font-weight:600;color:#1E40AF">' + tradeValue + '</span><button onclick="this.parentElement.parentElement.remove();renderTrade(\'' + side + '\')" style="background:none;border:none;color:#94A3B8;cursor:pointer;font-size:16px">×</button></span>';
