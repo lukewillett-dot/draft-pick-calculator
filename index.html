@@ -54,55 +54,6 @@
     width: 100%;
   }
 
-  /* Value table */
-  .value-grid {
-    display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    gap: 8px;
-    margin-top: 12px;
-  }
-
-  .value-cell {
-    background: #0F1720;
-    border-radius: 8px;
-    padding: 8px 4px;
-    text-align: center;
-    border: 1px solid #334155;
-    transition: all 0.2s;
-    cursor: pointer;
-    min-width: 0;
-  }
-
-  .value-cell:hover {
-    border-color: #0891B2;
-    background: #162032;
-  }
-
-  .value-cell.selected {
-    border-color: #0891B2;
-    background: rgba(8,145,178,0.15);
-  }
-
-  .value-cell .round-label {
-    font-size: 11px;
-    color: #64748B;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .value-cell .pick-num {
-    font-size: 18px;
-    font-weight: 700;
-    color: #fff;
-    margin: 2px 0;
-  }
-
-  .value-cell .value-num {
-    font-size: 12px;
-    color: #0891B2;
-    font-weight: 600;
-  }
-
   /* Trade calculator */
   .trade-area {
     display: grid;
@@ -296,24 +247,12 @@
   }
 
   .tab:hover:not(.active) { border-color: #64748B; color: #E2E8F0; }
-
-  .round-header {
-    font-size: 12px;
-    color: #64748B;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 16px 0 8px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid #1E293B;
-  }
-
-  .round-header:first-child { margin-top: 0; }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>Fantasy Baseball Draft Pick Value Calculator</h1>
-  <p class="subtitle">Smoothed value curve from 14 years of historical data. Use the trade calculator to evaluate pick swaps.</p>
+  <p class="subtitle">Smoothed value curve from 14 years of historical data. Trade calculator supports draft picks and keeper player types.</p>
 
   <!-- Chart -->
   <div class="card">
@@ -326,7 +265,7 @@
       <canvas id="valueChart"></canvas>
     </div>
     <p class="methodology">
-      Smoothing: logarithmic regression applied to pick-level data (picks 1â50) and round-level averages (rounds 6â16).
+      Smoothing: logarithmic regression applied to pick-level data (picks 1–50) and round-level averages (rounds 6–16).
       Trade values are normalized to a 1000-point scale where pick 1 = 1000.
     </p>
   </div>
@@ -336,7 +275,7 @@
     <h2>Trade Calculator</h2>
     <div class="trade-area">
       <div class="trade-side">
-        <h3>Side A â You give</h3>
+        <h3>Side A — You give</h3>
         <div class="add-pick-row">
           <select id="addPickA">
             <!-- populated by JS -->
@@ -356,7 +295,7 @@
       </div>
 
       <div class="trade-side">
-        <h3>Side B â You get</h3>
+        <h3>Side B — You get</h3>
         <div class="add-pick-row">
           <select id="addPickB">
             <!-- populated by JS -->
@@ -377,11 +316,6 @@
     </div>
   </div>
 
-  <!-- Value Reference -->
-  <div class="card">
-    <h2>Pick Value Reference</h2>
-    <div id="valueReference"></div>
-  </div>
 </div>
 
 <script>
@@ -615,7 +549,7 @@ function getChartData(view) {
           fill: true,
         },
         {
-          label: 'Trade Value (Ã10)',
+          label: 'Trade Value (×10)',
           data: smoothedPicks.map(p => p.tradeValue / 10 * 3),
           borderColor: '#22C55E',
           backgroundColor: 'rgba(34,197,94,0.05)',
@@ -681,35 +615,55 @@ function setView(view) {
 // ======== TRADE CALCULATOR ========
 const tradeState = { A: [], B: [] };
 
+// ======== KEEPER / PLAYER TYPE VALUES ========
+// Strong keeper ~ round -8 (top 8 keeper, well above draft pool)
+// Borderline keeper ~ round 0 (just above the draft)
+// ML Prospect ~ round 8 draft pick equivalent
+const strongKeeperSmoothed = roundSmoother(-8);
+const borderlineKeeperSmoothed = roundSmoother(0);
+const prospectRound = smoothedRounds.find(r => r.round === 8);
+
+function keeperTradeValue(smoothedVal) {
+  const surplus = smoothedVal - replacementLevel * 0.85;
+  return Math.round(Math.max(surplus, 10) / (maxRoundVal - replacementLevel * 0.85) * 1000);
+}
+
+const playerTypes = [
+  { id: 'keeper_strong', label: 'Strong Keeper', tradeValue: keeperTradeValue(strongKeeperSmoothed) },
+  { id: 'keeper_borderline', label: 'Borderline Keeper', tradeValue: keeperTradeValue(borderlineKeeperSmoothed) },
+  { id: 'keeper_prospect', label: 'ML Prospect', tradeValue: prospectRound.tradeValue },
+];
+
 function populateSelects() {
   const selects = ['addPickA', 'addPickB'];
   selects.forEach(id => {
     const sel = document.getElementById(id);
     sel.innerHTML = '';
 
-    // By round
+    // Draft picks by round
+    const draftGroup = document.createElement('optgroup');
+    draftGroup.label = 'Draft Picks';
     for (let r = 1; r <= 16; r++) {
       const opt = document.createElement('option');
       opt.value = `round_${r}`;
       const rv = smoothedRounds.find(sr => sr.round === r);
       opt.textContent = `Round ${r} pick (value: ${rv.tradeValue})`;
-      sel.appendChild(opt);
+      draftGroup.appendChild(opt);
     }
+    sel.appendChild(draftGroup);
 
-    // Specific picks (1-50)
-    const optGroup = document.createElement('optgroup');
-    optGroup.label = 'Specific Picks (1-50)';
-    for (let p = 1; p <= 50; p++) {
+    // Player types
+    const playerGroup = document.createElement('optgroup');
+    playerGroup.label = 'Players';
+    playerTypes.forEach(pt => {
       const opt = document.createElement('option');
-      opt.value = `pick_${p}`;
-      const pv = smoothedPicks.find(sp => sp.pick === p);
-      opt.textContent = `Pick ${p} (Rd ${Math.ceil(p/10)}) â value: ${pv.tradeValue}`;
-      optGroup.appendChild(opt);
-    }
-    sel.appendChild(optGroup);
+      opt.value = pt.id;
+      opt.textContent = `${pt.label} (value: ${pt.tradeValue})`;
+      playerGroup.appendChild(opt);
+    });
+    sel.appendChild(playerGroup);
   });
 }
-
 function addPick(side) {
   const sel = document.getElementById(`addPick${side}`);
   const val = sel.value;
@@ -720,6 +674,10 @@ function addPick(side) {
     const rv = smoothedRounds.find(sr => sr.round === r);
     label = `Rd ${r}`;
     tradeValue = rv.tradeValue;
+  } else if (val.startsWith('keeper_')) {
+    const pt = playerTypes.find(p => p.id === val);
+    label = pt.label;
+    tradeValue = pt.tradeValue;
   } else {
     const p = parseInt(val.split('_')[1]);
     const pv = smoothedPicks.find(sp => sp.pick === p);
@@ -749,7 +707,7 @@ function renderTrade() {
     tradeState[side].forEach((pick, i) => {
       const chip = document.createElement('div');
       chip.className = 'trade-chip';
-      chip.innerHTML = `${pick.label} <span class="chip-value">${pick.tradeValue}</span> <span class="remove">Ã</span>`;
+      chip.innerHTML = `${pick.label} <span class="chip-value">${pick.tradeValue}</span> <span class="remove">×</span>`;
       chip.onclick = () => removePick(side, i);
       container.appendChild(chip);
     });
@@ -787,54 +745,24 @@ function updateVerdict() {
   }
 }
 
-// ======== VALUE REFERENCE TABLE ========
-function renderValueReference() {
-  const container = document.getElementById('valueReference');
-  let html = '';
-
-  for (let r = 1; r <= 16; r++) {
-    const rv = smoothedRounds.find(sr => sr.round === r);
-    html += `<div class="round-header">Round ${r} â Trade Value: ${rv.tradeValue}</div>`;
-
-    html += '<div class="value-grid">';
-    const start = (r - 1) * 10 + 1;
-    const end = r * 10;
-    for (let p = start; p <= end; p++) {
-      if (r <= 5) {
-        const pv = smoothedPicks.find(sp => sp.pick === p);
-        html += `<div class="value-cell">
-          <div class="round-label">Pick</div>
-          <div class="pick-num">${p}</div>
-          <div class="value-num">${pv.tradeValue}</div>
-        </div>`;
-      } else {
-        html += `<div class="value-cell">
-          <div class="round-label">Pick</div>
-          <div class="pick-num">${p}</div>
-          <div class="value-num">${rv.tradeValue}</div>
-        </div>`;
-      }
-    }
-    html += '</div>';
-  }
-
-  container.innerHTML = html;
-}
 
 // ======== INIT ========
 createChart();
 populateSelects();
 renderTrade();
-renderValueReference();
 
-// Pre-load the "2 fifths for a 3rd" question
+// Pre-load example: 2 borderline keepers + Rd 5 for Rd 3 + prospect
 setTimeout(() => {
+  const blVal = playerTypes.find(p => p.id === 'keeper_borderline').tradeValue;
+  const prVal = playerTypes.find(p => p.id === 'keeper_prospect').tradeValue;
   tradeState.A = [
-    { id: 'round_5', label: 'Rd 5', tradeValue: smoothedRounds.find(r => r.round === 5).tradeValue },
+    { id: 'keeper_borderline', label: 'Borderline Keeper', tradeValue: blVal },
+    { id: 'keeper_borderline', label: 'Borderline Keeper', tradeValue: blVal },
     { id: 'round_5', label: 'Rd 5', tradeValue: smoothedRounds.find(r => r.round === 5).tradeValue },
   ];
   tradeState.B = [
     { id: 'round_3', label: 'Rd 3', tradeValue: smoothedRounds.find(r => r.round === 3).tradeValue },
+    { id: 'keeper_prospect', label: 'ML Prospect', tradeValue: prVal },
   ];
   renderTrade();
 }, 500);
