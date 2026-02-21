@@ -549,7 +549,7 @@ function getChartData(view) {
           fill: true,
         },
         {
-          label: 'Trade Value (Ã10)',
+          label: 'Trade Value (x10)',
           data: smoothedPicks.map(p => p.tradeValue / 10 * 3),
           borderColor: '#22C55E',
           backgroundColor: 'rgba(34,197,94,0.05)',
@@ -696,7 +696,7 @@ function renderTrade() {
     tradeState[side].forEach((pick, i) => {
       const chip = document.createElement('div');
       chip.className = 'trade-chip';
-      chip.innerHTML = `${pick.label} <span class="chip-value">${pick.tradeValue}</span> <span class="remove">Ã</span>`;
+      chip.innerHTML = `${pick.label} <span class="chip-value">${pick.tradeValue}</span> <span class="remove">x</span>`;
       chip.onclick = () => removePick(side, i);
       container.appendChild(chip);
     });
@@ -769,6 +769,8 @@ function updateVerdict() {
       const asset = closestAsset(Math.abs(diff));
       verdict.textContent = 'You lose this trade by ' + Math.abs(diff) + ' points (' + pctDiff.toFixed(1) + '%). ' + randomQuip(loseQuips) + ' Evening it out would require adding ' + asset.label + ' (' + asset.val + ') to Side A.';
     }
+}
+
 
 
 // ======== INIT ========
