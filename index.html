@@ -635,37 +635,7 @@ function addPick(side) {
         var val = sel.value;
         var r = parseInt(val.split('_')[1]);
         var rv = smoothedRounds.find(function(sr) { return sr.round === r; });
-        var label = 'Rd ' + r;
-        var tradeValue = rv.tradeValue;
-
-        var list = document.getElementById('side' + side);
-        var li = document.createElement('li');
-        li.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #E2E8F0';
-        
-        var labelSpan = document.createElement('span');
-        labelSpan.textContent = label;
-        
-        var rightSpan = document.createElement('span');
-        rightSpan.style.cssText = 'display:flex;align-items:center;gap:8px';
-        
-        var valSpan = document.createElement('span');
-        valSpan.style.cssText = 'font-weight:600;color:#1E40AF';
-        valSpan.textContent = tradeValue;
-        
-        var btn = document.createElement('button');
-        btn.style.cssText = 'background:none;border:none;color:#94A3B8;cursor:pointer;font-size:16px';
-        btn.textContent = '\u00d7';
-        btn.addEventListener('click', function() {
-          li.remove();
-          renderTrade(side);
-        });
-        
-        rightSpan.appendChild(valSpan);
-        rightSpan.appendChild(btn);
-        li.appendChild(labelSpan);
-        li.appendChild(rightSpan);
-        li.dataset.value = tradeValue;
-        list.appendChild(li);
+        tradeState[side].push({ label: 'Rd ' + r, tradeValue: rv.tradeValue });
         renderTrade(side);
       }
 function removePick(side, index) {
