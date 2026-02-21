@@ -275,7 +275,7 @@
     <h2>Trade Calculator</h2>
     <div class="trade-area">
       <div class="trade-side">
-        <h3>Side A  -  You give</h3>
+        <h3>Side A  -  You give <span style="font-size:12px;color:#64748B;font-weight:400">(+25% tax)</span></h3>
         <div class="add-pick-row">
           <select id="addPickA">
             <!-- populated by JS -->
@@ -295,7 +295,7 @@
       </div>
 
       <div class="trade-side">
-        <h3>Side B  -  You get <span style="font-size:12px;color:#64748B;font-weight:400">(+25% tax)</span></h3>
+        <h3>Side B  -  You get</h3>
         <div class="add-pick-row">
           <select id="addPickB">
             <!-- populated by JS -->
@@ -618,8 +618,8 @@ const tradeState = { A: [], B: [] };
 // ======== KEEPER / PLAYER TYPE VALUES ========
     const playerTypes = [
       { id: 'keeper_strong', label: 'Strong Keeper', tradeValue: 1400 },
-      { id: 'keeper_borderline', label: 'Borderline Keeper', tradeValue: 600 },
-      { id: 'keeper_prospect', label: 'ML Prospect', tradeValue: 500 },
+      { id: 'keeper_borderline', label: 'Borderline Keeper', tradeValue: 500 },
+      { id: 'keeper_prospect', label: 'ML Prospect', tradeValue: 400 },
     ];
 
 function populateSelects() {
@@ -702,7 +702,7 @@ function renderTrade() {
     });
 
     const total = tradeState[side].reduce((s, p) => s + p.tradeValue, 0);
-    if (side === 'B') {
+    if (side === 'A') {
       const taxed = Math.round(total * 1.25);
       document.getElementById(`total${side}`).textContent = total > 0 ? taxed + ' (taxed)' : '0';
     } else {
@@ -725,9 +725,9 @@ function updateVerdict() {
   }
 
   const taxRate = 1.25;
-  const taxedB = Math.round(totalB * taxRate);
-  const diff = totalA - taxedB;
-  const pctDiff = Math.abs(diff) / Math.max(totalA, taxedB) * 100;
+  const taxedA = Math.round(totalA * taxRate);
+  const diff = totalB - taxedA;
+  const pctDiff = Math.abs(diff) / Math.max(taxedA, totalB) * 100;
 
   // Find closest asset to the difference
     function closestAsset(gap) {
