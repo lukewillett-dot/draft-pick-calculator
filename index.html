@@ -275,7 +275,7 @@
     <h2>Trade Calculator</h2>
     <div class="trade-area">
       <div class="trade-side">
-        <h3>Side A  -  You give</h3>
+        <h3>Side A  -  You give <span style="font-size:12px;color:#64748B;font-weight:400">(+25% tax)</span></h3>
         <div class="add-pick-row">
           <select id="addPickA">
             <!-- populated by JS -->
@@ -702,7 +702,12 @@ function renderTrade() {
     });
 
     const total = tradeState[side].reduce((s, p) => s + p.tradeValue, 0);
-    document.getElementById(`total${side}`).textContent = total;
+    if (side === 'A') {
+      const taxed = Math.round(total * 1.25);
+      document.getElementById(`total${side}`).textContent = total > 0 ? taxed + ' (taxed)' : '0';
+    } else {
+      document.getElementById(`total${side}`).textContent = total;
+    }
   });
 
   updateVerdict();
@@ -719,8 +724,10 @@ function updateVerdict() {
     return;
   }
 
-  const diff = totalB - totalA;
-  const pctDiff = Math.abs(diff) / Math.max(totalA, totalB) * 100;
+  const taxRate = 1.25;
+  const taxedA = Math.round(totalA * taxRate);
+  const diff = totalB - taxedA;
+  const pctDiff = Math.abs(diff) / Math.max(taxedA, totalB) * 100;
 
   // Find closest asset to the difference
     function closestAsset(gap) {
